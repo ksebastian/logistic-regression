@@ -39,7 +39,7 @@ day_of_week_dict = {'mon': [1, 0, 0, 0], 'thu': [0, 1, 0, 0], 'tue': [0, 0, 1, 0
 ########### Initiate the app
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-server = app.server
+application = app.server
 app.title = tabtitle
 
 ########### Set up the layout
@@ -170,4 +170,4 @@ def prediction_function(age, job, marital, education, contact, day, duration, pr
 
 ############ Deploy
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    application.run(debug=True, port=8080)

@@ -4,6 +4,7 @@ import plotly.graph_objs as go
 import pickle
 import json
 from dash.dependencies import Input, Output, State
+from ast import literal_eval
 
 ########### Define your variables ######
 myheading1 = 'Bank Marketing Campaign'
@@ -22,13 +23,17 @@ unpickled_model = pickle.load(filename)
 filename.close()
 
 ########### list of feature values
-job_list = ['admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services',
-            'student', 'technician', 'unemployed']
-marital_list = ['divorced', 'married', 'single']
-education_list = ['basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course',
-                  'university.degree']
-contact_list = ['cellular', 'telephone']
-day_of_week_list = ['fri', 'mon', 'thu', 'tue', 'wed']
+job_dict = {'blue-collar': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'entrepreneur': [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            'housemaid': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0], 'management': [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            'retired': [0, 0, 0, 0, 1, 0, 0, 0, 0, 0], 'self-employed': [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+            'services': [0, 0, 0, 0, 0, 0, 1, 0, 0, 0], 'student': [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            'technician': [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 'unemployed': [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]}
+marital_dict = {'married': [1, 0], 'single': [0, 1]}
+education_dict = {'basic.6y': [1, 0, 0, 0, 0, 0], 'basic.9y': [0, 1, 0, 0, 0, 0], 'high.school': [0, 0, 1, 0, 0, 0],
+                  'illiterate': [0, 0, 0, 1, 0, 0], 'professional.course': [0, 0, 0, 0, 1, 0],
+                  'university.degree': [0, 0, 0, 0, 0, 1]}
+contact_dict = {'telephone': [1]}
+day_of_week_dict = {'mon': [1, 0, 0, 0], 'thu': [0, 1, 0, 0], 'tue': [0, 0, 1, 0], 'wed': [0, 0, 0, 1]}
 ### features = 'age', 'job', 'marital', 'education', 'contact', 'day_of_week', 'duration', 'previous'
 
 ########### Initiate the app
@@ -52,35 +57,35 @@ app.layout = html.Div(children=[
             html.Div('Job Type:'),
             dcc.Dropdown(
                 id='job',
-                options=[{'label': i, 'value': i} for i in job_list],
-                value=job_list[0]
+                options=[{'label': key, 'value': str(value)} for key, value in job_dict.items()],
+                value=str(sorted(job_dict.values())[0])
             ),
             html.Div('Marital Status:'),
             dcc.Dropdown(
                 id='marital',
-                options=[{'label': i, 'value': i} for i in marital_list],
-                value=marital_list[0]
+                options=[{'label': key, 'value': str(value)} for key, value in marital_dict.items()],
+                value=str(sorted(marital_dict.values())[0])
             ),
             html.Div('Education Level:'),
             dcc.Dropdown(
                 id='education',
-                options=[{'label': i, 'value': i} for i in education_list],
-                value=education_list[0]
+                options=[{'label': key, 'value': str(value)} for key, value in education_dict.items()],
+                value=str(sorted(education_dict.values())[0])
             ),
             html.Div('Contact Type:'),
             dcc.Dropdown(
                 id='contact',
-                options=[{'label': i, 'value': i} for i in contact_list],
-                value=contact_list[0]
+                options=[{'label': key, 'value': str(value)} for key, value in contact_dict.items()],
+                value=str(sorted(contact_dict.values())[0])
             ),
             html.Div('Contacted Day:'),
             dcc.Dropdown(
                 id='day',
-                options=[{'label': i, 'value': i} for i in day_of_week_list],
-                value=day_of_week_list[0]
+                options=[{'label': key, 'value': str(value)} for key, value in day_of_week_dict.items()],
+                value=str(sorted(day_of_week_dict.values())[0])
             ),
             html.Div('Call Duration:'),
-            dcc.Input(id='duration', value=5000, type='number', min=0, max=5000, step=100),
+            dcc.Input(id='duration', value=1000, type='number', min=0, max=5000, step=1),
             html.Div('Was called previously(1=Yes, 0=No):'),
             dcc.Input(id='previous', value=0, type='number', min=0, max=1, step=1),
             html.Div('Probability Threshold for Loan Approval'),
@@ -125,10 +130,24 @@ app.layout = html.Div(children=[
      Input(component_id='previous', component_property='value'),
      Input(component_id='Threshold', component_property='value')
      ])
+
+
 def prediction_function(age, job, marital, education, contact, day, duration, previous, Threshold):
     try:
-        data = [[age, job, marital, education, contact, day, duration, previous]]
-        print("Data:{}", data)
+        data_list = [age]
+        data_list.append(duration)
+        data_list.append(previous)
+        data_list.extend(literal_eval(job))
+        data_list.extend(literal_eval(marital))
+        data_list.extend(literal_eval(education))
+        data_list.extend(literal_eval(contact))
+        data_list.extend(literal_eval(day))
+        data = [data_list]
+        print("Data:", data)
+
+        # Threshold =  Threshold/100.0
+        print("Threshold:", Threshold)
+        # data = [[59,1207,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0]]
         rawprob = 100 * unpickled_model.predict_proba(data)[0][1]
         print("Raw Probability:{}", rawprob)
 
